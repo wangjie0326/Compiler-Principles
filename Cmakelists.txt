@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.14)
+project(CompilerLab LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if (MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+# 词法分析器静态库
+add_library(lexer_lib STATIC
+    ${PROJECT_SOURCE_DIR}/src/Lexer.cpp
+)
+target_include_directories(lexer_lib PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+# 实验一主程序
+add_executable(lexer_main
+    ${PROJECT_SOURCE_DIR}/src/main.cpp
+)
+target_link_libraries(lexer_main lexer_lib)
+
+# 单元测试程序
+add_executable(lexer_test
+    ${PROJECT_SOURCE_DIR}/tests/test_lexer.cpp
+)
+target_link_libraries(lexer_test lexer_lib)
+
+enable_testing()
+add_test(NAME LexerUnitTests COMMAND lexer_test)
