@@ -23,9 +23,12 @@ bool Parser::parse() {
     reductions_.clear();
     trace_.clear();
     errors_.clear();
+    parseTreeNodes_.clear();
+    parseTreeRoot_ = -1;
 
     std::vector<int> stateStack;
     std::vector<std::string> symbolStack;
+    std::vector<int> nodeStack;
 
     stateStack.push_back(0);
 
@@ -69,13 +72,18 @@ bool Parser::parse() {
                 << ", go to I" << action.targetState;
             addTrace(oss.str());
 
+            const int leafIndex = createLeafNode(currentTerminal, currentToken);
+
             symbolStack.push_back(currentTerminal);
             stateStack.push_back(action.targetState);
+            nodeStack.push_back(leafIndex);
 
             currentToken = nextToken();
             currentTerminal = tokenToTerminal(currentToken);
         } else if (action.type == SLRActionType::Reduce) {
             const auto& production = grammar_.productions().at(static_cast<std::size_t>(action.productionId));
+
+            std::vector<int> children;
 
             for (std::size_t i = 0; i < production.rhs.size(); ++i) {
                 if (!symbolStack.empty()) {
@@ -85,7 +93,16 @@ bool Parser::parse() {
                 if (stateStack.size() > 1) {
                     stateStack.pop_back();
                 }
+
+                if (!nodeStack.empty()) {
+                    children.push_back(nodeStack.back());
+                    nodeStack.pop_back();
+                }
             }
+
+            std::reverse(children.begin(), children.end());
+
+            const int parentIndex = createParentNode(production.lhs, children);
 
             const int gotoFromState = stateStack.back();
             const auto gotoIt = table_.gotoTable().find({gotoFromState, production.lhs});
@@ -100,6 +117,7 @@ bool Parser::parse() {
 
             symbolStack.push_back(production.lhs);
             stateStack.push_back(gotoIt->second);
+            nodeStack.push_back(parentIndex);
 
             reductions_.push_back(production.id);
 
@@ -108,6 +126,10 @@ bool Parser::parse() {
                 << ", goto I" << gotoIt->second;
             addTrace(oss.str());
         } else if (action.type == SLRActionType::Accept) {
+            if (!nodeStack.empty()) {
+                parseTreeRoot_ = nodeStack.back();
+            }
+
             addTrace("accept");
             return true;
         } else {
@@ -127,6 +149,24 @@ const std::vector<std::string>& Parser::trace() const {
 
 const std::vector<std::string>& Parser::errors() const {
     return errors_;
+}
+
+const std::vector<ParseTreeNode>& Parser::parseTreeNodes() const {
+    return parseTreeNodes_;
+}
+
+int Parser::parseTreeRoot() const {
+    return parseTreeRoot_;
+}
+
+void Parser::printParseTree(std::ostream& os) const {
+    if (parseTreeRoot_ < 0 ||
+        static_cast<std::size_t>(parseTreeRoot_) >= parseTreeNodes_.size()) {
+        os << "(empty parse tree)\n";
+        return;
+    }
+
+    printParseTreeNode(os, parseTreeRoot_, 0);
 }
 
 std::string Parser::tokenToTerminal(const Token& token) const {
@@ -217,4 +257,49 @@ std::vector<std::string> Parser::expectedTerminals(int state) const {
 
     std::sort(result.begin(), result.end());
     return result;
+}
+
+int Parser::createLeafNode(const std::string& symbol, const Token& token) {
+    ParseTreeNode node;
+    node.symbol = symbol;
+    node.lexeme = token.lexeme;
+
+    parseTreeNodes_.push_back(node);
+    return static_cast<int>(parseTreeNodes_.size() - 1);
+}
+
+int Parser::createParentNode(const std::string& symbol, const std::vector<int>& children) {
+    ParseTreeNode node;
+    node.symbol = symbol;
+    node.children = children;
+
+    parseTreeNodes_.push_back(node);
+    return static_cast<int>(parseTreeNodes_.size() - 1);
+}
+
+void Parser::printParseTreeNode(std::ostream& os, int nodeIndex, int depth) const {
+    if (nodeIndex < 0 ||
+        static_cast<std::size_t>(nodeIndex) >= parseTreeNodes_.size()) {
+        return;
+    }
+
+    const auto& node = parseTreeNodes_[static_cast<std::size_t>(nodeIndex)];
+
+    for (int i = 0; i < depth; ++i) {
+        os << "  ";
+    }
+
+    os << node.symbol;
+
+    if (!node.lexeme.empty()) {
+        os << "('" << node.lexeme << "')";
+    } else if (node.children.empty()) {
+        os << " -> ε";
+    }
+
+    os << "\n";
+
+    for (const int childIndex : node.children) {
+        printParseTreeNode(os, childIndex, depth + 1);
+    }
 }
