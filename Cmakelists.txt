@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     add_compile_options(/W4 /WX)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -41,6 +42,8 @@ add_library(parser_lib STATIC
     ${PROJECT_SOURCE_DIR}/src/LR0Automaton.cpp
     ${PROJECT_SOURCE_DIR}/src/SLRTable.cpp
     ${PROJECT_SOURCE_DIR}/src/Parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/SymbolTable.cpp
+    ${PROJECT_SOURCE_DIR}/src/SemanticAnalyzer.cpp
 )
 target_include_directories(parser_lib PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(parser_lib lexer_lib)

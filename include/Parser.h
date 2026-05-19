@@ -3,16 +3,12 @@
 #include "Grammar.h"
 #include "Lexer.h"
 #include "SLRTable.h"
+#include "ParseTreeNode.h"
+#include "SemanticAnalyzer.h"
 
 #include <ostream>
 #include <string>
 #include <vector>
-
-struct ParseTreeNode {
-    std::string symbol;
-    std::string lexeme;
-    std::vector<int> children;
-};
 
 class Parser {
 public:
@@ -28,6 +24,8 @@ public:
     int parseTreeRoot() const;
     void printParseTree(std::ostream& os) const;
 
+    const SemanticAnalyzer& semanticAnalyzer() const;
+
 private:
     Lexer& lexer_;
 
@@ -42,6 +40,8 @@ private:
 
     std::vector<ParseTreeNode> parseTreeNodes_;
     int parseTreeRoot_ = -1;
+
+    SemanticAnalyzer semanticAnalyzer_;
 
     std::string tokenToTerminal(const Token& token) const;
     std::string tokenDisplay(const Token& token) const;

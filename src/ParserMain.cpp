@@ -1,8 +1,10 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "Grammar.h"
+#include "SemanticAnalyzer.h"
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -43,7 +45,7 @@ void printUsage(const char* programName) {
 
 int main(int argc, char* argv[]) {
     std::cout << "============================================\n";
-    std::cout << "Lab 2 SLR Parser\n";
+    std::cout << "Lab 2/3 SLR Parser + Semantic Analyzer\n";
     std::cout << "============================================\n";
 
     std::string source;
@@ -114,6 +116,39 @@ int main(int argc, char* argv[]) {
     if (accepted) {
         std::cout << "\nParse Tree:\n";
         parser.printParseTree(std::cout);
+    }
+
+    std::cout << "\n============================================\n";
+    std::cout << "生成的三地址代码\n";
+    std::cout << "============================================\n";
+
+    const auto& codeList = parser.semanticAnalyzer().generatedCode();
+    if (codeList.empty()) {
+        std::cout << "（无——算术/赋值规则尚未实现）\n";
+    } else {
+        for (const auto& instr : codeList) {
+            std::cout << instr << "\n";
+        }
+    }
+
+    std::cout << "\n============================================\n";
+    std::cout << "符号表\n";
+    std::cout << "============================================\n";
+
+    const auto& symEntries = parser.semanticAnalyzer().symbolTable().entries();
+    if (symEntries.empty()) {
+        std::cout << "（空）\n";
+    } else {
+        std::cout << std::left
+                  << std::setw(16) << "名称"
+                  << std::setw(12) << "类型"
+                  << "偏移\n";
+        std::cout << std::string(36, '-') << "\n";
+        for (const auto& entry : symEntries) {
+            std::cout << std::setw(16) << entry.name
+                      << std::setw(12) << entry.type
+                      << entry.offset << "\n";
+        }
     }
 
     return accepted ? 0 : 1;

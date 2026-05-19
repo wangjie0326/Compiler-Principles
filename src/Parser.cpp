@@ -101,8 +101,13 @@ bool Parser::parse() {
             }
 
             std::reverse(children.begin(), children.end());
-
+ // ① 建父节点：把本次规约的右部子节点"合并"成一个新的语法树节点
             const int parentIndex = createParentNode(production.lhs, children);
+            //// ② 【第四步核心改动】语义规则调用点                               
+       //    此时子节点的 place/code 属性已经填好（由更早的规约设置），    
+       //    applyRule 按产生式编号找到对应的 case，把父节点的 place/code写进去。                                                                        
+            //    "每次规约 → 立刻调语义规则"正是在这里实现的。  //
+            semanticAnalyzer_.applyRule(production.id, parseTreeNodes_, parentIndex, children);
 
             const int gotoFromState = stateStack.back();
             const auto gotoIt = table_.gotoTable().find({gotoFromState, production.lhs});
@@ -263,7 +268,10 @@ int Parser::createLeafNode(const std::string& symbol, const Token& token) {
     ParseTreeNode node;
     node.symbol = symbol;
     node.lexeme = token.lexeme;
-
+    node.value  = token.value;
+// 【第四步前置改动】把词法器已处理好的值存进节点                           
+// 例：OCT "07" → value="7"，HEX "0xa" → value="10"                         
+// 语义规则 26/27/28 会直接读 node.value 作为 place  
     parseTreeNodes_.push_back(node);
     return static_cast<int>(parseTreeNodes_.size() - 1);
 }
@@ -275,6 +283,10 @@ int Parser::createParentNode(const std::string& symbol, const std::vector<int>& 
 
     parseTreeNodes_.push_back(node);
     return static_cast<int>(parseTreeNodes_.size() - 1);
+}
+
+const SemanticAnalyzer& Parser::semanticAnalyzer() const {
+    return semanticAnalyzer_;
 }
 
 void Parser::printParseTreeNode(std::ostream& os, int nodeIndex, int depth) const {
