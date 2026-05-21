@@ -1,0 +1,9 @@
+
+while (a>b) a=b+c;
+AAA
+c = b + d;
+if (x5 > 0x0b) g=1+y;
+
+if y1 = 0xa then
+    while y2 > y3 do
+        l = x*(y+z);
