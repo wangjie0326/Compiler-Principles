@@ -1,0 +1,105 @@
+cmake_minimum_required(VERSION 3.14)
+project(CompilerLab LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_link_options(-static-libgcc -static-libstdc++)  
+endif()
+
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+# 词法分析器静态库
+add_library(lexer_lib STATIC
+    ${PROJECT_SOURCE_DIR}/src/Lexer.cpp
+)
+target_include_directories(lexer_lib PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+# 实验一主程序
+add_executable(lexer_main
+    ${PROJECT_SOURCE_DIR}/src/main.cpp
+)
+target_link_libraries(lexer_main lexer_lib)
+
+# 实验一单元测试程序
+add_executable(lexer_test
+    ${PROJECT_SOURCE_DIR}/tests/test_lexer.cpp
+)
+target_link_libraries(lexer_test lexer_lib)
+
+enable_testing()
+add_test(NAME LexerUnitTests COMMAND lexer_test)
+
+# 实验二：Grammar / FIRST-FOLLOW / LR(0) / SLR 表 / Parser 模块静态库
+add_library(parser_lib STATIC
+    ${PROJECT_SOURCE_DIR}/src/Grammar.cpp
+    ${PROJECT_SOURCE_DIR}/src/FirstFollow.cpp
+    ${PROJECT_SOURCE_DIR}/src/LR0Automaton.cpp
+    ${PROJECT_SOURCE_DIR}/src/SLRTable.cpp
+    ${PROJECT_SOURCE_DIR}/src/Parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/SymbolTable.cpp
+    ${PROJECT_SOURCE_DIR}/src/SemanticAnalyzer.cpp
+)
+target_include_directories(parser_lib PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(parser_lib lexer_lib)
+
+# 实验二：Grammar 模块测试
+add_executable(grammar_test
+    ${PROJECT_SOURCE_DIR}/tests/grammar_test.cpp
+)
+target_link_libraries(grammar_test parser_lib)
+add_test(NAME GrammarUnitTests COMMAND grammar_test)
+
+# 实验二：FIRST/FOLLOW 模块测试
+add_executable(first_follow_test
+    ${PROJECT_SOURCE_DIR}/tests/first_follow_test.cpp
+)
+target_link_libraries(first_follow_test parser_lib)
+add_test(NAME FirstFollowUnitTests COMMAND first_follow_test)
+
+# 实验二：LR(0) 项目集规范族测试
+add_executable(lr0_test
+    ${PROJECT_SOURCE_DIR}/tests/lr0_test.cpp
+)
+target_link_libraries(lr0_test parser_lib)
+add_test(NAME LR0AutomatonUnitTests COMMAND lr0_test)
+
+# 实验二：SLR 分析表测试
+add_executable(slr_table_test
+    ${PROJECT_SOURCE_DIR}/tests/slr_table_test.cpp
+)
+target_link_libraries(slr_table_test parser_lib)
+add_test(NAME SLRTableUnitTests COMMAND slr_table_test)
+
+# 实验二：Parser 测试
+add_executable(parser_test
+    ${PROJECT_SOURCE_DIR}/tests/parser_test.cpp
+)
+target_link_libraries(parser_test parser_lib)
+add_test(NAME ParserUnitTests COMMAND parser_test)
+
+# 实验二：Parser 文件输入测试
+add_executable(parser_file_test
+    ${PROJECT_SOURCE_DIR}/tests/parser_file_test.cpp
+)
+target_link_libraries(parser_file_test parser_lib)
+add_test(NAME ParserFileInputTests COMMAND parser_file_test)
+
+# 实验二：Parser 主程序
+add_executable(parser_main
+    ${PROJECT_SOURCE_DIR}/src/ParserMain.cpp
+)
+target_link_libraries(parser_main parser_lib)
+
+# 实验三：语义分析测试
+add_executable(semantic_analyzer_test
+    ${PROJECT_SOURCE_DIR}/tests/semantic_analyzer_test.cpp
+)
+target_link_libraries(semantic_analyzer_test parser_lib)
+add_test(NAME SemanticAnalyzerTests COMMAND semantic_analyzer_test)
