@@ -60,7 +60,10 @@ enum class TokenType {
  
     // 特殊 
     END_OF_FILE,  ///< 输入流结束
-    UNKNOWN       ///< 无法识别的字符（错误恢复用）
+    UNKNOWN,      ///< 无法识别的字符（错误恢复用）
+
+    //实型
+    REAL
 };
  
 

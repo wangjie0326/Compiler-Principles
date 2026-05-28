@@ -352,6 +352,12 @@ Token Lexer::scanNumber() {
     while (!isEOF() && isDigit(current())) {
         digits += advance();
     }
+    // 新增：检测小数点后跟数字 → REAL token
+    if (!isEOF() && current() == '.' && isDigit(peekChar())) {
+        digits += advance();  // 吃掉 '.'
+        while (!isEOF() && isDigit(current())) digits += advance();
+        return Token(TokenType::REAL, digits, digits, startLine, startCol);
+    }
     return Token(TokenType::DEC, digits, digits, startLine, startCol);
 }
 

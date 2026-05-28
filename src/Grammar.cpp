@@ -3,25 +3,23 @@
 #include <sstream>
 
 Grammar::Grammar()
-    : startSymbol_("P"),//开始符号
-      augmentedStartSymbol_("S'"),//增广开始符号
+    : startSymbol_("P"),
+      augmentedStartSymbol_("S'"),
       endToken_("END_TOKEN") {
-    
-    //终结符
     terminals_ = {
-        "IDN", "DEC", "OCT", "HEX",
+        "IDN", "DEC", "OCT", "HEX", "REAL",
         "IF", "THEN", "ELSE", "WHILE", "DO", "BEGIN", "END",
         "ADD", "SUB", "MUL", "DIV",
         "GT", "LT", "EQ", "GE", "LE", "NEQ",
         "SLP", "SRP", "SEMI",
         "END_TOKEN"
     };
-    //非终结符
+
     nonterminals_ = {
         "S'", "P", "Stmts", "Stmt", "Assign", "Cond", "RelOp",
         "Expr", "ExprRest", "Term", "TermRest", "Factor"
     };
-    //产生式
+
     productions_ = {
         {0, "S'", {"P"}},
         {1, "P", {"Stmts"}},
@@ -58,7 +56,8 @@ Grammar::Grammar()
         {26, "Factor", {"DEC"}},
         {27, "Factor", {"OCT"}},
         {28, "Factor", {"HEX"}},
-        {29, "Factor", {"SLP", "Expr", "SRP"}}
+        {29, "Factor", {"SLP", "Expr", "SRP"}},
+        {30, "Factor", {"REAL"}}//新增
     };
 }
 
@@ -93,9 +92,7 @@ bool Grammar::isTerminal(const std::string& symbol) const {
 bool Grammar::isNonterminal(const std::string& symbol) const {
     return nonterminals_.find(symbol) != nonterminals_.end();
 }
-// 将一条产生式转换为可读字符串，主要用于测试输出、调试输出和报告截图。
-// 例如：9: Assign -> IDN EQ Expr
-// 若右部为空，则输出 ε。
+
 std::string Grammar::productionToString(const Production& p) const {
     std::ostringstream oss;
     oss << p.id << ": " << p.lhs << " -> ";

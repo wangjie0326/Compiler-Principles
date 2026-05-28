@@ -6,9 +6,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     add_compile_options(/W4 /WX)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
+    add_link_options(-static-libgcc -static-libstdc++)  
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -41,6 +43,8 @@ add_library(parser_lib STATIC
     ${PROJECT_SOURCE_DIR}/src/LR0Automaton.cpp
     ${PROJECT_SOURCE_DIR}/src/SLRTable.cpp
     ${PROJECT_SOURCE_DIR}/src/Parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/SymbolTable.cpp
+    ${PROJECT_SOURCE_DIR}/src/SemanticAnalyzer.cpp
 )
 target_include_directories(parser_lib PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(parser_lib lexer_lib)
@@ -92,3 +96,10 @@ add_executable(parser_main
     ${PROJECT_SOURCE_DIR}/src/ParserMain.cpp
 )
 target_link_libraries(parser_main parser_lib)
+
+# 实验三：语义分析测试
+add_executable(semantic_analyzer_test
+    ${PROJECT_SOURCE_DIR}/tests/semantic_analyzer_test.cpp
+)
+target_link_libraries(semantic_analyzer_test parser_lib)
+add_test(NAME SemanticAnalyzerTests COMMAND semantic_analyzer_test)
